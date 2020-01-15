@@ -1,11 +1,11 @@
 <?php
    /*
-   Plugin Name: Markdown Github
+   Plugin Name: WPShop docs markdown
    Description: A plugin to inject markdown files directly into a post from Github
-   Plugin URI: https://github.com/gis-ops/md-github-wordpress
-   Version: 1.0
-   Author: Nils Nolde
-   Author URI: https://gis-ops.com
+   Plugin URI:
+   Version: 666.666
+   Author: -
+   Author URI:
    License: GPLv2
    */
 
@@ -62,7 +62,7 @@ function MDGH_get_api_response($url, $token, $method) {
            
            if ( ! empty( $json_files ) ) {
              foreach ( $json_files as $json_file ) {
-               if ( $json_file['name'] != 'thumbnail.jpg' ) {
+               if ( ! in_array( $json_file['name'], array( 'thumbnail.png' ,'order.json' ) ) ) {
                  if ( empty( $element['files'] ) ) {
                    $element['files'] = array();
                  }
@@ -81,7 +81,7 @@ function MDGH_get_api_response($url, $token, $method) {
          }
        }
      }
-     
+
     return array(
       'navigation' => $pages,
     );
@@ -97,7 +97,6 @@ function MDGH_get_api_response($url, $token, $method) {
 }
 
 function MDGH_get_github_checkout($json, $url) {
-
   $datetime = $json['commit']['committer']['date'];
 
   $max_datetime = strtotime($datetime);
@@ -131,58 +130,86 @@ function MDGH_md_github_all_handler($atts) {
   
   if ( ! empty( $query_var ) ) {
       $url .= '/' . $query_var;
-  } else {
-    $url .= '/readme';
   }
 
 $res = MDGH_get_api_response($url, $token, 'all');
 $res_content = MDGH_get_api_response($url . '.md', $token, 'file');
 
 ?>
-    <div class="wpshop-documentation">
 
-   <ul class="navigation-category">
    <?php
-   if ( ! empty( $res['navigation'] ) ) {
+   if ( ! empty( $res['navigation'] ) && empty( $query_var ) ) {
+     ?>
+     <div class="wpshop-documentation">
+       <?php
      foreach ( $res['navigation'] as $page ) {
        ?>
-       <li class="navigation-category-header">
-         <?php
-         if ( ! empty( $page['thumbnail'] ) ) { 
-           ?>
-           <img src="<?php echo $page['thumbnail']; ?>" />
-           <?php
-         }
-         ?>
+        <div class="navigation-category">
 
-           <span class="navigation-category-title">
-                <?php echo $page['name']; ?>
-           </span>
-
-       
-         <ul class="navigation-files">
-           <?php
-           if ( ! empty( $page['files'] ) ) {
-             foreach ( $page['files'] as $element ) {
+        <div class="navigation-category-header">
+             <?php
+             if ( ! empty( $page['thumbnail'] ) ) {
                ?>
-               <li class="navigation-file"><a href="<?php echo home_url( 'documentation/' . $element['path'] ); ?>"><?php echo $element['name']; ?></a></li>
+               <img src="<?php echo $page['thumbnail']; ?>" />
                <?php
              }
-           }
-           ?>
-         </ul>
-       </li>
-       <?php
+             ?>
+
+               <span class="navigation-category-title">
+                    <?php echo $page['name']; ?>
+               </span>
+            </div>
+            
+             <ul class="navigation-files">
+              <?php
+              if ( ! empty( $page['files'] ) ) {
+                  foreach ( $page['files'] as $element ) {
+                      ?>
+                      <li class="navigation-file"><a href="<?php echo home_url( 'documentation/' . $element['path'] ); ?>"><?php echo str_replace( '-', ' ', $element['name'] ); ?></a></li>
+                      <?php
+                  }
+              }
+             ?>
+              </ul>
+        </div>
+
+	     <?php
      }
+     ?>
+    </div>
+     <?php
    }
    ?>
-   </ul>
 	    <?php
 	    if ( ! empty( $res_content ) ) {
+      ?>
+      <div class="wpshop-documentation-single">
+        <ul class="wpshop-documentation-sidebar">
+        <?php
+		    foreach ( $res['navigation'] as $page ) :
+          ?>
+          <li class="sidebar-navigation-element">
+            <span class="sidebar-navigation-title"><?php echo $page['name']; ?></span>
+            <ul class="sidebar-navigation-child">
+              <?php
+              foreach( $page['files'] as $file ) :
+                ?>
+                <li class="sidebar-navigation-element <?php echo $file['path'] == $query_var ? 'sidebar-navigation-active' : ''; ?>">
+                    <a class="sidebar-navigation-title" href="<?php echo home_url( 'documentation/' . $file['path'] ); ?>"><?php echo str_replace( '-', ' ', $file['name'] ); ?></a>
+                </li>
+                <?php
+              endforeach; 
+              ?>
+            </ul>
+          </li>
+          <?php
+		    endforeach;
 		    ?>
-            <div class="wpshop-documentation-single">
-			    <?php echo $res_content; ?>
-            </div>
+      </ul>
+
+      <div class="wpshop-documentation-content">
+        <?php echo $res_content; ?>
+      </div>
 		    <?php
 	    }
 	    ?>
@@ -214,10 +241,9 @@ add_shortcode('checkout_github', "MDGH_md_github_checkout");
 add_shortcode("md_github", "MDGH_md_github_handler");
 add_shortcode("md_github_all", "MDGH_md_github_all_handler");
 
-
 add_filter( 'generate_rewrite_rules', function ( $wp_rewrite ){
     $wp_rewrite->rules = array_merge(
-        ['documentation/(.*)/?$' => 'index.php?page_id=4&path=$matches[1]'],
+        ['documentation/(.*)/?$' => 'index.php?page_id=8&path=$matches[1]'],
         $wp_rewrite->rules
     );
 } );
